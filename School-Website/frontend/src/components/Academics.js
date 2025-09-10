@@ -5,7 +5,6 @@ import Header from "./Header";
 function Academics() {
   return (
     <div>
-      <Header />
       <section className="flex overflow-hidden flex-col items-center px-20 pt-12 pb-52 w-full bg-white max-md:px-5 max-md:pb-24 max-md:max-w-full">
         <h2 className="text-2xl text-center text-black">Academics</h2>
         <p className="mt-4 text-base text-center text-black">
