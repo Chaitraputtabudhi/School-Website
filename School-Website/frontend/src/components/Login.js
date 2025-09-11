@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-function Login() {
+function Login({onLogin}) {
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -18,12 +18,13 @@ function Login() {
                 credentials: 'include',
             });
             const data = await res.json();
-
             if (res.ok) {
+                
+                onLogin(data.user)
                 setMessage('Login successful! Welcome' + data.user.name);
                 //redirect to home page if login is successfull
                 localStorage.setItem('user', JSON.stringify(data.user));
-                navigate('/home', { replace: true });
+                navigate('/user', { replace: true });
             } else {
                 setMessage(data.error);
             }

@@ -1,7 +1,18 @@
 import React from 'react';
-import { GraduationCap } from 'lucide-react';
+import { BookOpen, Users, GraduationCap, Calendar } from 'lucide-react';
+import { NavLink, useNavigate } from 'react-router-dom';
 
 const Footer = ({ setCurrentPage }) => {
+    const navigate = useNavigate();
+
+    const navigationItems = [
+
+        { id: 'about', label: 'About', icon: BookOpen, path: '/about' },
+        { id: 'academics', label: 'Academics', icon: GraduationCap, path: '/academics' },
+        { id: 'admissions', label: 'Admissions', icon: Users, path: '/admission' },
+        { id: 'events', label: 'Events', icon: Calendar, path: '/events' }
+        
+    ];
   return (
     <footer className="bg-gray-800 text-white py-12">
       <div className="max-w-6xl mx-auto px-4">
@@ -21,14 +32,14 @@ const Footer = ({ setCurrentPage }) => {
           <div>
             <h3 className="font-semibold text-lg mb-4">Quick Links</h3>
             <div className="space-y-2">
-              {['About', 'Academics', 'Admissions', 'Events'].map(link => (
-                <button
-                  key={link}
-                  onClick={() => setCurrentPage(link.toLowerCase())}
+              {navigationItems.map(link => (
+                <NavLink
+                  key={link.id}
+                  to={link.path}
                   className="block text-gray-300 hover:text-white transition-colors"
                 >
-                  {link}
-                </button>
+                  {link.label}
+                </NavLink>
               ))}
             </div>
           </div>

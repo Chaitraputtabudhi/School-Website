@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-function Signup() {
+function Signup({onSignup}) {
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -21,12 +21,14 @@ function Signup() {
       const data = await res.json();
 
       if (res.ok) {
+        
+        onSignup(data.user)
         setMessage('Registered Successfully! Welcome' + name);
         setName('');
         setEmail('');
         setPassword('');
         localStorage.setItem('user',JSON.stringify(data.user));
-        navigate('/home',{replace:true});
+        navigate('/user',{replace:true});
       } else {
         setMessage(data.error);
       }

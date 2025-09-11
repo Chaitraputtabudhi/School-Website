@@ -31,7 +31,6 @@ function UserPage() {
                 className="object-cover absolute inset-0 size-full"
                 alt="School background"
             />
-            <Header />
             <h1 className="relative z-10 text-3xl font-bold text-black mt-10 ml-5">
                Welcome {user?.name || "Guest"} </h1>
         </section>

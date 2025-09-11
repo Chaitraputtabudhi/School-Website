@@ -4,9 +4,8 @@ import { NavLink, useNavigate } from 'react-router-dom';
 
 const Navigation = ({ isLoggedIn, user, handleLogout }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-     const [menuOpen, setMenuOpen] = useState(false);
+    const [menuOpen, setMenuOpen] = useState(false);
     const navigate = useNavigate();
-
     const navigationItems = [
         { id: 'home', label: 'Home', icon: Home, path: '/home' },
         { id: 'about', label: 'About', icon: BookOpen, path: '/about' },
@@ -57,13 +56,14 @@ const Navigation = ({ isLoggedIn, user, handleLogout }) => {
                         ) : (
                             <div className="relative">
                                 <button
-                                    onClick={() => setMenuOpen(!menuOpen)}
+                                    // onClick={() => setMenuOpen(!menuOpen)}
+                                    onClick={() => navigate('/profile')}
                                     className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
                                 >
                                     Profile
                                 </button>
 
-                                {menuOpen && (
+                                {/* {menuOpen && (
                                     <div className="absolute right-0 mt-2 w-40 bg-white shadow-lg rounded-md border border-gray-200 z-50">
                                         <button
                                             onClick={() => navigate('/login')}
@@ -78,7 +78,7 @@ const Navigation = ({ isLoggedIn, user, handleLogout }) => {
                                             Register
                                         </button>
                                     </div>
-                                )}
+                                )} */}
                             </div>
                         )}
                     </div>
