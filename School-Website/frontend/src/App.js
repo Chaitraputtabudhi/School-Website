@@ -5,7 +5,7 @@ import Home from './components/Home';
 import Login from './components/Login';
 import Signup from './components/Signup';
 import UserPage from './components/UserPage';
-import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
+import { Navigate, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import Navigation from './components/Navigation';
 import { AnimatePresence } from 'framer-motion';
 import PageWrapper from './components/Pagewrapper';
@@ -18,10 +18,19 @@ import SummerCamp from './components/SummerCamp';
 import Gallery from './components/Gallery';
 import ContactPage from './components/Contact'
 import ProfilePage from './components/Profile';
+import ManageEventsPage from './components/ManageEventsPage';
+import ProtectedRoute from './components/ProtectedRoute';
+import AdminDashboard from './components/AdminDashboard';
 
-function AnimatedRoutes({ handleLogin, handleRegister }) {
+function AnimatedRoutes({ handleLogin, handleRegister, user }) {
   const location = useLocation();
   const navigate = useNavigate();
+  const AdminRoute = ({ user, children }) => {
+    if (!user || user.role !== 'admin') {
+      return <Navigate to='/home' replace />
+    }
+    return children;
+  }
 
   return (
     <AnimatePresence mode="wait">
@@ -38,6 +47,18 @@ function AnimatedRoutes({ handleLogin, handleRegister }) {
         <Route path="/gallery" element={<PageWrapper><Gallery /></PageWrapper>} />
         <Route path="/contact" element={<PageWrapper><ContactPage /></PageWrapper>} />
         <Route path="/profile" element={<PageWrapper><ProfilePage handleLogin={handleLogin} handleRegister={handleRegister} /></PageWrapper>} />
+        {/* <Route path='/admin/events' element={<PageWrapper><ManageEventsPage /></PageWrapper>} /> */}
+        <Route path="/admin/events" element={<AdminRoute user={user}><PageWrapper><ManageEventsPage /></PageWrapper></AdminRoute>} />
+        <Route path="/admin" element={<ProtectedRoute adminOnly={true}><AdminDashboard /></ProtectedRoute>}/>
+        <Route path="/admin/events" element={<ProtectedRoute adminOnly={true}><EventsPage adminView={true} /></ProtectedRoute>}/>
+        <Route
+          path="/admin/gallery"
+          element={
+            <ProtectedRoute adminOnly={true}>
+              <Gallery adminView={true} />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </AnimatePresence>
   );
@@ -108,10 +129,17 @@ function App() {
     navigate("/home", { replace: true });
   };
 
+  const AdminRoute = ({ user, children }) => {
+    if (!user || user.role !== 'admin') {
+      return <Navigate to='/home' replace />
+    }
+    return children;
+  }
+
   return (
     <>
       <Navigation isLoggedIn={isLoggedIn} user={user} handleLogout={handleLogout} />
-      <AnimatedRoutes handleLogin={handleLogin} handleRegister={handleRegister} />
+      <AnimatedRoutes handleLogin={handleLogin} handleRegister={handleRegister} user={user} />
       <Footer />
     </>
   );
