@@ -9,7 +9,7 @@ const cookieParser = require('cookie-parser');
 const app = express();
 app.use(express.json());
 app.use(cors({
-  origin: "http://localhost:3000/home", // React frontend
+  origin: "http://localhost:3000", // React frontend
   credentials: true, // allow cookies
 }));
 app.use(cookieParser());
@@ -26,7 +26,7 @@ const JWT_secret = "your-secret";
 
 //sign-up route
 app.post('/signup', async (req, res) => {
-  const { name,email,password,role,className,emprole } = req.body;
+  const { name,email,password,confirm_password,role,className,emprole } = req.body;
   try {
 
     const existingUser = await pool.query('select * from users where email=$1', [email]);
