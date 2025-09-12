@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
-import Header from "./Header";
 
 function UserPage() {
     const [user, setUser] = useState(null);
+    const [role, setrole] = useState('admin');
 
     useEffect(() => {
         const savedUser = localStorage.getItem('user');
@@ -24,17 +24,27 @@ function UserPage() {
         };
         checkSession();
     }, []);
+
+    const handleRole = async (e) =>{
+        e.preventDefault();
+        try{
+            if(role === 'admin'){
+                
+            }
+        }catch(err){}
+    }
+
+
     return (
-        <section className="flex overflow-hidden relative flex-col w-full min-h-[768px] pb-[694px] max-md:pb-24 max-md:max-w-full">
+        <div className="flex overflow-hidden relative flex-col w-full min-h-[768px] pb-[694px] max-md:pb-24 max-md:max-w-full">
             <img
                 src="/Images/School-Image.jpg"
                 className="object-cover absolute inset-0 size-full"
                 alt="School background"
             />
-            <Header />
             <h1 className="relative z-10 text-3xl font-bold text-black mt-10 ml-5">
-               Welcome {user?.name || "Guest"} </h1>
-        </section>
+               Welcome {user?.emprole || "Guest"} </h1>
+        </div>
     )
 }
 
