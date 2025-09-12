@@ -22,43 +22,137 @@ import ManageEventsPage from './components/ManageEventsPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminDashboard from './components/AdminDashboard';
 
+// Protected Route Component for Admin
+const AdminRoute = ({ user, children }) => {
+  console.log('AdminRoute - checking user:', user);
+  console.log('AdminRoute - user emprole:', user?.emprole);
+  
+  if (!user) {
+    console.log('No user - redirecting to login');
+    return <Navigate to='/login' replace />;
+  }
+  
+  if (user.emprole?.toLowerCase() !== 'admin') {
+    console.log('Not admin - redirecting to home');
+    return <Navigate to='/home' replace />;
+  }
+  
+  console.log('Admin access granted');
+  return children;
+};
+
+// Protected Route Component for Authenticated Users
+const AuthRoute = ({ user, children }) => {
+  if (!user) {
+    return <Navigate to='/login' replace />;
+  }
+  return children;
+};
+
 function AnimatedRoutes({ handleLogin, handleRegister, user }) {
   const location = useLocation();
-  const navigate = useNavigate();
-  const AdminRoute = ({ user, children }) => {
-    if (!user || user.role !== 'admin') {
-      return <Navigate to='/home' replace />
-    }
-    return children;
-  }
 
   return (
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
+        {/* Public Routes */}
+        <Route path="/" element={<PageWrapper><Home /></PageWrapper>} />
         <Route path="/home" element={<PageWrapper><Home /></PageWrapper>} />
         <Route path="/about" element={<PageWrapper><Aboutus /></PageWrapper>} />
         <Route path="/academics" element={<PageWrapper><Academics /></PageWrapper>} />
-        <Route path="/login" element={<PageWrapper><Login onLogin={handleLogin} /></PageWrapper>} />
-        <Route path="/signup" element={<PageWrapper><Signup onSignup={handleLogin} /></PageWrapper>} />
-        <Route path="/user" element={<PageWrapper><UserPage /></PageWrapper>} />
         <Route path="/admission" element={<PageWrapper><AdmissionsPage /></PageWrapper>} />
         <Route path="/events" element={<PageWrapper><EventsPage /></PageWrapper>} />
-        <Route path="/summercamp" element={<PageWrapper><SummerCamp /></PageWrapper>} />
         <Route path="/gallery" element={<PageWrapper><Gallery /></PageWrapper>} />
         <Route path="/contact" element={<PageWrapper><ContactPage /></PageWrapper>} />
-        <Route path="/profile" element={<PageWrapper><ProfilePage handleLogin={handleLogin} handleRegister={handleRegister} /></PageWrapper>} />
-        {/* <Route path='/admin/events' element={<PageWrapper><ManageEventsPage /></PageWrapper>} /> */}
-        <Route path="/admin/events" element={<AdminRoute user={user}><PageWrapper><ManageEventsPage /></PageWrapper></AdminRoute>} />
-        <Route path="/admin" element={<ProtectedRoute adminOnly={true}><AdminDashboard /></ProtectedRoute>}/>
-        <Route path="/admin/events" element={<ProtectedRoute adminOnly={true}><EventsPage adminView={true} /></ProtectedRoute>}/>
-        <Route
-          path="/admin/gallery"
+        
+        {/* Auth Routes */}
+        <Route 
+          path="/login" 
           element={
-            <ProtectedRoute adminOnly={true}>
-              <Gallery adminView={true} />
-            </ProtectedRoute>
-          }
+            user ? 
+            <Navigate to={user.emprole?.toLowerCase() === 'admin' ? '/admin' : '/home'} replace /> :
+            <PageWrapper><Login onLogin={handleLogin} /></PageWrapper>
+          } 
         />
+        <Route 
+          path="/signup" 
+          element={
+            user ? 
+            <Navigate to={user.emprole?.toLowerCase() === 'admin' ? '/admin' : '/home'} replace /> :
+            <PageWrapper><Signup onSignup={handleLogin} /></PageWrapper>
+          } 
+        />
+        <Route 
+          path="/profile" 
+          element={
+            user ? 
+            <Navigate to={user.emprole?.toLowerCase() === 'admin' ? '/admin' : '/home'} replace /> :
+            <PageWrapper><ProfilePage handleLogin={handleLogin} handleRegister={handleRegister} /></PageWrapper>
+          } 
+        />
+        
+        {/* Protected User Routes */}
+        <Route 
+          path="/user" 
+          element={
+            <AuthRoute user={user}>
+              <PageWrapper><UserPage /></PageWrapper>
+            </AuthRoute>
+          } 
+        />
+        <Route 
+          path="/summercamp" 
+          element={
+            <AuthRoute user={user}>
+              <PageWrapper><SummerCamp /></PageWrapper>
+            </AuthRoute>
+          } 
+        />
+        <Route 
+          path="/user/events" 
+          element={
+            <AuthRoute user={user}>
+              <PageWrapper><EventsPage userView={true} /></PageWrapper>
+            </AuthRoute>
+          } 
+        />
+        
+        {/* Admin Routes */}
+        <Route 
+          path="/admin" 
+          element={
+            <AdminRoute user={user}>
+              <PageWrapper><AdminDashboard /></PageWrapper>
+            </AdminRoute>
+          } 
+        />
+        <Route 
+          path="/admin/events" 
+          element={
+            <AdminRoute user={user}>
+              <PageWrapper><ManageEventsPage /></PageWrapper>
+            </AdminRoute>
+          } 
+        />
+        <Route 
+          path="/admin/gallery" 
+          element={
+            <AdminRoute user={user}>
+              <PageWrapper><Gallery adminView={true} /></PageWrapper>
+            </AdminRoute>
+          } 
+        />
+        <Route 
+          path="/admin/dashboard" 
+          element={
+            <AdminRoute user={user}>
+              <PageWrapper><AdminDashboard /></PageWrapper>
+            </AdminRoute>
+          } 
+        />
+        
+        {/* Fallback Routes */}
+        <Route path="*" element={<Navigate to="/home" replace />} />
       </Routes>
     </AnimatePresence>
   );
@@ -72,9 +166,18 @@ function App() {
   useEffect(() => {
     const savedUser = localStorage.getItem('user');
     if (savedUser) {
-      setUser(JSON.parse(savedUser));
-      setIsLoggedIn(true);
+      try {
+        const userData = JSON.parse(savedUser);
+        setUser(userData);
+        setIsLoggedIn(true);
+        console.log('Loaded user from localStorage:', userData);
+      } catch (err) {
+        console.error('Error parsing saved user:', err);
+        localStorage.removeItem('user');
+      }
     }
+    
+    // Check server session
     const checkSession = async () => {
       try {
         const res = await fetch('http://localhost:5000/me', {
@@ -84,7 +187,13 @@ function App() {
           const data = await res.json();
           setUser(data.user);
           setIsLoggedIn(true);
-          localStorage.setItem('user', JSON.stringify(data.user))
+          localStorage.setItem('user', JSON.stringify(data.user));
+          console.log('Session user:', data.user);
+        } else {
+          // Session expired or invalid
+          setUser(null);
+          setIsLoggedIn(false);
+          localStorage.removeItem('user');
         }
       } catch (err) {
         console.log('No active sessions');
@@ -94,47 +203,34 @@ function App() {
   }, []);
 
   const handleLogin = (userData) => {
+    console.log('App handleLogin called with:', userData);
     setIsLoggedIn(true);
     setUser(userData);
-    localStorage.setItem('user', JSON.stringify(userData))
+    localStorage.setItem('user', JSON.stringify(userData));
   };
 
-  const handleRegister = (formData) => {
-    const newUser = {
-      name: formData.name,
-      email: formData.email,
-      role: formData.role,
-      className: formData.className,
-      emprole: formData.emprole
-    };
-
+  const handleRegister = (userData) => {
+    console.log('App handleRegister called with:', userData);
     setIsLoggedIn(true);
-    setUser(newUser);
-    localStorage.setItem("user", JSON.stringify(newUser));
+    setUser(userData);
+    localStorage.setItem('user', JSON.stringify(userData));
   };
-
 
   const handleLogout = async () => {
     try {
       await fetch('http://localhost:5000/logout', {
         method: 'POST',
         credentials: 'include',
-      })
+      });
     } catch (err) {
-      console.log('Logout error', err);
+      console.log('Logout error:', err);
     }
+    
     setIsLoggedIn(false);
     setUser(null);
     localStorage.removeItem('user');
     navigate("/home", { replace: true });
   };
-
-  const AdminRoute = ({ user, children }) => {
-    if (!user || user.role !== 'admin') {
-      return <Navigate to='/home' replace />
-    }
-    return children;
-  }
 
   return (
     <>

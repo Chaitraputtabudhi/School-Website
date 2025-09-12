@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import Header from "./Header";
 
 function UserPage() {
     const [user, setUser] = useState(null);

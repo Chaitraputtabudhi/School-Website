@@ -32,10 +32,16 @@ const ProfilePage = ({ handleLogin, handleRegister }) => {
                 }
                 const data = await res.json();
 
-    
-                    handleLogin(data.user);
-                    navigate('/user', { replace: true })
-                
+
+                handleLogin(data.user);
+                const checkrole = data.user.emprole?.toLowerCase();
+                if (checkrole === 'admin') {
+                    navigate('/admin', { replace: true });
+                } else {
+                    navigate('/user', { replace: true });
+                }
+
+
             } else {
 
                 if (formData.password !== formData.confirmPassword) {
@@ -56,14 +62,21 @@ const ProfilePage = ({ handleLogin, handleRegister }) => {
                     credentials: 'include',
                 });
 
-                if(!res.ok){
+                if (!res.ok) {
                     const errData = await res.json();
                     alert(errData.error || 'Login failed');
                     return;
                 }
                 const data = await res.json();
                 handleRegister(data.user);
-                navigate('/user',{replace: true});
+                console.log(data.user.emprole);
+                const checkrole = data.user.emprole?.toLowerCase();
+                if (checkrole === 'admin') {
+                    navigate('/admin', { replace: true });
+                } else {
+                    navigate('/user', { replace: true });
+                }
+
 
             }
         } catch (err) {
