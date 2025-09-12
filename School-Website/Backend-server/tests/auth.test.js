@@ -1,18 +1,17 @@
 const request = require("supertest");
 const app = require("../index");
 const { Pool } = require("pg");
-const bcrypt = require("bcrypt");
 
 const pool = new Pool({
   user: "postgres",
   host: "localhost",
-  database: "SchoolDbTest", //  use a separate test DB
+  database: "SchoolDbTest", // separate test DB
   password: "postgres123",
   port: 5432,
 });
 
+// Reset DB before tests
 beforeAll(async () => {
-  // Reset test DB
   await pool.query("DROP TABLE IF EXISTS users CASCADE");
   await pool.query(`
     CREATE TABLE users (
@@ -31,107 +30,106 @@ afterAll(async () => {
   await pool.end();
 });
 
-// --- TEST CASES ---
+// --- Helper for logging ---
+function logTestCase(name, input, res) {
+  console.log(`\n===== TEST CASE: ${name} =====`);
+  console.log("INPUT:", input);
+  console.log("OUTPUT:", {
+    status: res.statusCode,
+    body: res.body
+  });
+  console.log("====================================\n");
+}
 
+// --- TEST CASES ---
 describe("Auth API", () => {
   test("Signup should create new user", async () => {
-    const res = await request(app)
-      .post("/signup")
-      .send({
-        name: "Johne Doe",
-        email: "johny@test.com",
-        password: "test123",
-        role: "student",
-        className: "10A",
-        emprole: "user"
-      });
+    const input = {
+      name: "Johne oe",
+      email: "jhn@test.com",
+      password: "test123",
+      role: "student",
+      className: "10A",
+      emprole: "user"
+    };
+
+    const res = await request(app).post("/signup").send(input);
+    logTestCase("Signup should create new user", input, res);
 
     expect(res.statusCode).toBe(200);
-    expect(res.body.user.email).toBe("johny@test.com");
+    expect(res.body.user.email).toBe("jhn@test.com");
     expect(res.headers["set-cookie"]).toBeDefined();
   });
 
   test("Signup with existing email should fail", async () => {
-    const res = await request(app)
-      .post("/signup")
-      .send({
-        name: "Another John",
-        email: "john@test.com", // same email
-        password: "pass123",
-        role: "student",
-        className: "10A",
-        emprole: "user"
-      });
+    const input = {
+      name: "Another John",
+      email: "jhn@test.com",
+      password: "pass123",
+      role: "student",
+      className: "10A",
+      emprole: "user"
+    };
+
+    const res = await request(app).post("/signup").send(input);
+    logTestCase("Signup with existing email should fail", input, res);
 
     expect(res.statusCode).toBe(400);
     expect(res.body.error).toMatch(/Email already exists/);
   });
 
   test("Login with correct credentials should succeed", async () => {
-    const res = await request(app)
-      .post("/login")
-      .send({
-        email: "john@test.com",
-        password: "test123"
-      });
+    const input = { email: "jhn@test.com", password: "test123" };
+
+    const res = await request(app).post("/login").send(input);
+    logTestCase("Login with correct credentials should succeed", input, res);
 
     expect(res.statusCode).toBe(200);
-    expect(res.body.user.email).toBe("john@test.com");
+    expect(res.body.user.email).toBe("jhn@test.com");
     expect(res.headers["set-cookie"]).toBeDefined();
   });
 
   test("Login with wrong password should fail", async () => {
-    const res = await request(app)
-      .post("/login")
-      .send({
-        email: "john@test.com",
-        password: "wrongpass"
-      });
+    const input = { email: "jhn@test.com", password: "wrongpass" };
+
+    const res = await request(app).post("/login").send(input);
+    logTestCase("Login with wrong password should fail", input, res);
 
     expect(res.statusCode).toBe(401);
     expect(res.body.error).toMatch(/Invalid credentials/);
   });
 
   test("Access /me with token should return user", async () => {
-    const login = await request(app)
-      .post("/login")
-      .send({ email: "john@test.com", password: "test123" });
-
+    const loginInput = { email: "jhn@test.com", password: "test123" };
+    const login = await request(app).post("/login").send(loginInput);
     const cookie = login.headers["set-cookie"];
 
-    const res = await request(app)
-      .get("/me")
-      .set("Cookie", cookie);
+    const res = await request(app).get("/me").set("Cookie", cookie);
+    logTestCase("Access /me with token should return user", loginInput, res);
 
     expect(res.statusCode).toBe(200);
-    expect(res.body.user.email).toBe("john@test.com");
+    expect(res.body.user.email).toBe("jhn@test.com");
   });
 
   test("Logout should clear token", async () => {
-    const login = await request(app)
-      .post("/login")
-      .send({ email: "john@test.com", password: "test123" });
-
+    const loginInput = { email: "jhn@test.com", password: "test123" };
+    const login = await request(app).post("/login").send(loginInput);
     const cookie = login.headers["set-cookie"];
 
-    const res = await request(app)
-      .post("/logout")
-      .set("Cookie", cookie);
+    const res = await request(app).post("/logout").set("Cookie", cookie);
+    logTestCase("Logout should clear token", loginInput, res);
 
     expect(res.statusCode).toBe(200);
     expect(res.body.message).toBe("Logged out");
   });
 
   test("Admin-only route should reject non-admin", async () => {
-    const login = await request(app)
-      .post("/login")
-      .send({ email: "john@test.com", password: "test123" });
-
+    const loginInput = { email: "jhn@test.com", password: "test123" };
+    const login = await request(app).post("/login").send(loginInput);
     const cookie = login.headers["set-cookie"];
 
-    const res = await request(app)
-      .get("/admin-only-test") // hypothetical admin route
-      .set("Cookie", cookie);
+    const res = await request(app).get("/admin-only-test").set("Cookie", cookie);
+    logTestCase("Admin-only route should reject non-admin", loginInput, res);
 
     expect(res.statusCode).toBe(403);
   });

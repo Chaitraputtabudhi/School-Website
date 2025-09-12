@@ -225,12 +225,6 @@ const Navigation = ({ isLoggedIn, user, handleLogout }) => {
                                 >
                                     Profile
                                 </button>
-                                {/* <button
-                                    onClick={() => navigate('/signup')}
-                                    className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
-                                >
-                                    Sign Up
-                                </button> */}
                             </div>
                         )}
                     </div>
