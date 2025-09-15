@@ -9,97 +9,33 @@ const cookieParser = require('cookie-parser');
 const app = express();
 app.use(express.json());
 app.use(cors({
-  origin: "http://localhost:3000", // React frontend
-  credentials: true, // allow cookies
+    origin: "http://localhost:3000", // React frontend
+    credentials: true, // allow cookies
 }));
 app.use(cookieParser());
 
 const pool = new Pool({
-  user: "postgres",
-  host: "localhost",
-  database: "SchoolDb",
-  password: "postgres123",
-  port: 5432,
+    user: "postgres",
+    host: "localhost",
+    database: "SchoolDb",
+    password: "postgres123",
+    port: 5432,
 })
 
 const JWT_secret = "your-secret";
 
-// //sign-up route
-// app.post('/signup', async (req, res) => {
-//   const { name,email,password,confirm_password,role,className,emprole } = req.body;
-//   try {
-
-//     const existingUser = await pool.query('select * from users where email=$1', [email]);
-//     if (existingUser.rows.length > 0) {
-//       return res.status(400).json({ error: 'Email already registered' });
-//     }
-//     const hashedPassword = await bcrypt.hash(password, 10);
-//     const result = await pool.query(
-//       'INSERT INTO users(name,email,password,role,className,emprole) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *',
-//       [name, email, hashedPassword, req.body.role, req.body.className || null, req.body.emprole || null]
-//     );
-//     const user = result.rows[0];
-//     //token creation
-//     const token = jwt.sign({ id: user.id, email: user.email }, JWT_secret, { expiresIn: '1h', });
-
-//     //send token in http only cookie
-//     res.cookie('token', token, { httpOnly: true, secure: false, sameSite: 'strict' })
-//       .json({user});
-//   } catch (err) {
-//     console.log(err)
-//     res.status(500).json({ error: "server error" });
-//   }
-// })
-
-// //login route
-
-// app.post('/login', async (req, res) => {
-//   const { email, password } = req.body;
-//   try {
-//     const result = await pool.query('select * from users where email=$1', [email]);
-//     if (result.rows.length === 0) return res.status(400).json({ error: "User not found" });
-
-//     const user = result.rows[0];
-//     const isValid = await bcrypt.compare(password, user.password);
-
-//     if (!isValid) return res.status(401).json({ error: "Invalid credentials" });
-
-//     const token = jwt.sign({ id: user.id, email: user.email }, JWT_secret, { expiresIn: '1h', });
-//     res.cookie('token', token, { httpOnly: true, secure: false, sameSite: 'strict', }).json({ user: { id: user.id, name: user.name, email: user.email } });
-//   } catch (err) {
-//     console.log(err);
-//     res.status(500).json({ error: "Server error" })
-//   }
-// });
-
-// //Protected route
-// app.get("/me", async (req, res) => {
-//   const token = req.cookies.token;
-//   if (!token) return res.status(401).json({ error: "Not authenticated" });
-
-//   try {
-//     const decoded = jwt.verify(token, JWT_secret);
-//     const result = await pool.query('SELECT id, name, email, role, className, emprole FROM users WHERE id=$1', [decoded.id]);
-//     const user = result.rows[0];
-//     res.json({ user });
-//   } catch (err) {
-//     return res.status(401).json({ error: "Invalid token" });
-//   }
-// });
-
-// Update your backend signup route to handle the new fields
 app.post('/signup', async (req, res) => {
     const { name, email, password, role, className, emprole } = req.body;
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
-        
+
         // Insert user with all the new fields
         const result = await pool.query(
             'INSERT INTO users(name, email, password, role, className,emprole) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, name, email, role, className,emprole',
             [name, email, hashedPassword, role, className, emprole]
         );
         const user = result.rows[0];
-        
+
         // Create token with all user info
         const token = jwt.sign({
             id: user.id,
@@ -116,7 +52,7 @@ app.post('/signup', async (req, res) => {
             secure: false, // set true with https
             sameSite: 'strict',
             maxAge: 24 * 60 * 60 * 1000 // 24 hours
-        }).json({ 
+        }).json({
             user: {
                 id: user.id,
                 name: user.name,
@@ -160,7 +96,7 @@ app.post('/login', async (req, res) => {
             className: user.className,
             emprole: user.emprole
         }, JWT_secret, { expiresIn: '24h' });
-        
+
         res.cookie('token', token, {
             httpOnly: true,
             secure: false,
@@ -168,8 +104,8 @@ app.post('/login', async (req, res) => {
             maxAge: 24 * 60 * 60 * 1000 // 24 hours
         }).json({
             user: {
-                id: user.id, 
-                name: user.name, 
+                id: user.id,
+                name: user.name,
                 email: user.email,
                 role: user.role || 'user',
                 className: user.className,
@@ -204,7 +140,7 @@ const requireAdmin = (req, res, next) => {
         const decoded = jwt.verify(token, JWT_secret);
         console.log('Admin check - decoded user:', decoded);
         console.log('Admin check - emprole:', decoded.emprole);
-        
+
         if (decoded.emprole?.toLowerCase() !== 'admin') {
             return res.status(403).json({ error: "Admin access required" });
         }
@@ -224,15 +160,15 @@ app.post('/create-test-admin', async (req, res) => {
             ['Test Admin', 'admin@test.com', hashedPassword, 'employee', 'admin']
         );
         const user = result.rows[0];
-        res.json({ 
-            message: 'Test admin created successfully', 
-            user: { 
-                id: user.id, 
-                name: user.name, 
-                email: user.email, 
-                role: user.role, 
-                emprole: user.emprole 
-            } 
+        res.json({
+            message: 'Test admin created successfully',
+            user: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                emprole: user.emprole
+            }
         });
     } catch (err) {
         console.log('Error creating test admin:', err);
@@ -240,19 +176,80 @@ app.post('/create-test-admin', async (req, res) => {
     }
 });
 
+
+//admin routes with events
+
+app.get('/events', async (req, res) => {
+    try {
+        // const {month,year} = req.query;
+        // let query = `select event.*, user.name as created_by from events event left join users user on event.created_by = user.id order by event.event_date desc`;
+
+        // let params = [];
+        // if(year && month){
+        //     query =`select event.*, user.name as created_by from events event left join users user on event.created_by = user.id
+        //         where extract(month from event.event_date)=$1 and extract(year from event.event_date)=$2 order by event.event_date desc`;
+        //     params=[month,year];
+        //     }
+        // const result = await pool.query(query,params);
+        const result = await pool.query('select * from events');
+        res.json(result.rows);
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+app.post('/admin/events', requireAdmin, async (req, res) => {
+    const { title, description, event_date, location } = req.body;
+    try {
+        const result = await pool.query('insert into events(title,description,event_date,location,created_by) values ($1,$2,$3,$4,$5) RETURNING *', [title, description, event_date, location, req.user.id]);
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({ error: "Server error" })
+    }
+});
+
+app.delete('/admin/events/:id',requireAdmin,async (req,res) =>{
+    const {id} = req.params;
+    try{
+        const result = await pool.query('delete from events where id=$1 returning *',[id]);
+        if(result.rows.length === 0) return res.status(404).json({error:"Event not found."});
+        res.json({message:"Event deleted successfully"})
+    }catch(err){
+        console.log(err);
+        res.status(500).json({error:"Server error"});
+    }
+
+});
+
+app.put('/admin/events/:id',requireAdmin, async(req,res) =>{
+    const {id} = req.params;
+    const {title,event_date,description,location} = req.body;
+    try{
+        const result = await pool.query('update events set title = $1,event_date = $2, description = $3, location = $4, created_by = $5, id=$6 returning *',
+            [title,event_date,description,location,req.user.id,id]);
+        if(result.rows.length === 0) return res.status(404).json({message:"Event not found."});
+        res.json(result.rows[0]);
+    }catch(err){
+        console.log(err);
+        res.status(500).json({error:"Server error"});
+    }
+})
+
 // Test admin-only route
 app.get("/admin-only-test", requireAdmin, (req, res) => {
-  res.json({ message: "Welcome Admin" });
+    res.json({ message: "Welcome Admin" });
 });
 
 // 🔹 Logout
 app.post("/logout", (req, res) => {
-  res.clearCookie("token").json({ message: "Logged out" });
+    res.clearCookie("token").json({ message: "Logged out" });
 });
 
 //Jest can import the Express app without starting multiple servers.
 if (require.main === module) {
-  app.listen(5000, () => console.log("Server running on http://localhost:5000"));
+    app.listen(5000, () => console.log("Server running on http://localhost:5000"));
 }
 
 module.exports = app; // for testing 

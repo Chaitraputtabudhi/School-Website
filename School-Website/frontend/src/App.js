@@ -21,6 +21,8 @@ import ProfilePage from './components/Profile';
 import ManageEventsPage from './components/ManageEventsPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminDashboard from './components/AdminDashboard';
+import Settings from './components/Settings';
+import Userboard from './components/Userboard';
 
 // Protected Route Component for Admin
 const AdminRoute = ({ user, children }) => {
@@ -66,22 +68,8 @@ function AnimatedRoutes({ handleLogin, handleRegister, user }) {
         <Route path="/contact" element={<PageWrapper><ContactPage /></PageWrapper>} />
         
         {/* Auth Routes */}
-        <Route 
-          path="/login" 
-          element={
-            user ? 
-            <Navigate to={user.emprole?.toLowerCase() === 'admin' ? '/admin' : '/home'} replace /> :
-            <PageWrapper><Login onLogin={handleLogin} /></PageWrapper>
-          } 
-        />
-        <Route 
-          path="/signup" 
-          element={
-            user ? 
-            <Navigate to={user.emprole?.toLowerCase() === 'admin' ? '/admin' : '/home'} replace /> :
-            <PageWrapper><Signup onSignup={handleLogin} /></PageWrapper>
-          } 
-        />
+        <Route path="/login" element={ user ? <Navigate to={user.emprole?.toLowerCase() === 'admin' ? '/admin' : '/home'} replace /> : <PageWrapper><Login onLogin={handleLogin} /></PageWrapper>} />
+        <Route path="/signup" element={user ? <Navigate to={user.emprole?.toLowerCase() === 'admin' ? '/admin' : '/home'} replace /> : <PageWrapper><Signup onSignup={handleLogin} /></PageWrapper> } />
         <Route 
           path="/profile" 
           element={
@@ -109,7 +97,7 @@ function AnimatedRoutes({ handleLogin, handleRegister, user }) {
           } 
         />
         <Route 
-          path="/user/events" 
+          path="/events" 
           element={
             <AuthRoute user={user}>
               <PageWrapper><EventsPage userView={true} /></PageWrapper>
@@ -121,9 +109,7 @@ function AnimatedRoutes({ handleLogin, handleRegister, user }) {
         <Route 
           path="/admin" 
           element={
-            <AdminRoute user={user}>
-              <PageWrapper><AdminDashboard /></PageWrapper>
-            </AdminRoute>
+            <AdminRoute user={user}><PageWrapper><AdminDashboard /></PageWrapper></AdminRoute>
           } 
         />
         <Route 
@@ -150,6 +136,9 @@ function AnimatedRoutes({ handleLogin, handleRegister, user }) {
             </AdminRoute>
           } 
         />
+        <Route path="/admin/users" element={<AdminRoute user={user}><PageWrapper><Userboard /></PageWrapper></AdminRoute> } />
+        <Route path="/admin/settings" element={<AdminRoute user={user}><PageWrapper><Settings /></PageWrapper></AdminRoute> } />
+        
         
         {/* Fallback Routes */}
         <Route path="*" element={<Navigate to="/home" replace />} />
