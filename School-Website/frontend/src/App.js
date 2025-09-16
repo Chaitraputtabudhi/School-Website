@@ -124,7 +124,7 @@ function AnimatedRoutes({ handleLogin, handleRegister, user }) {
           path="/admin/gallery" 
           element={
             <AdminRoute user={user}>
-              <PageWrapper><Gallery adminView={true} /></PageWrapper>
+              <PageWrapper><Gallery user={user} adminView={true}/></PageWrapper>
             </AdminRoute>
           } 
         />

@@ -296,7 +296,7 @@ const AdminDashboard = () => {
 
                 {/* Footer */}
                 <div className="mt-8 text-center text-gray-500">
-                    <p>&copy; 2024 Excellence Academy Admin Panel. All rights reserved.</p>
+                    <p>&copy; 2024 Placeholder Academy Admin Panel. All rights reserved.</p>
                 </div>
             </div>
         </div>
