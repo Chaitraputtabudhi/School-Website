@@ -19,7 +19,6 @@ import Gallery from './components/Gallery';
 import ContactPage from './components/Contact'
 import ProfilePage from './components/Profile';
 import ManageEventsPage from './components/ManageEventsPage';
-import ProtectedRoute from './components/ProtectedRoute';
 import AdminDashboard from './components/AdminDashboard';
 import Settings from './components/Settings';
 import Userboard from './components/Userboard';

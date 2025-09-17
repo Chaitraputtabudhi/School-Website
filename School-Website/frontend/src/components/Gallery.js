@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 
 function Gallery() {
   const [images, setImages] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
@@ -10,7 +9,6 @@ function Gallery() {
   const [previewImages, setPreviewImages] = useState([]);
   const [editingImage, setEditingImage] = useState(null);
   const [editTitle, setEditTitle] = useState('');
-  const [actionLoading, setActionLoading] = useState({});
   const [user, setUser] = useState(null);
 
   useEffect(() => {
@@ -119,10 +117,10 @@ function Gallery() {
   };
 
   const handleDelete = async (imageId) => {
-    if (!window.confirm("Are you sure you want to delete this image?")) return;
-
-    // Set loading state for this specific image
-    setActionLoading(prev => ({ ...prev, [`delete_${imageId}`]: true }));
+    if (!window.confirm(`Are you sure you want to delete image ${imageId}?`)) {
+      console.log('🗑️ DELETE CANCELLED BY USER');
+      return;
+    }
 
     try {
       const response = await fetch(`http://localhost:5000/admin/gallery/${imageId}`, {
@@ -134,84 +132,47 @@ function Gallery() {
       console.log('Delete response headers:', response.headers); // Debug headers
       const data = await response.json();
       if (response.ok) {
-        
+
         console.log('Delete success response:', data);
-        setMessage("Image deleted successfully!");       
+        setMessage("Image deleted successfully!");
         fetchImages();
       } else {
-        const errorText = await response.text();
         setMessage(`❌ Delete failed: ${data.error || 'Unknown error'}`);
-        
       }
     } catch (error) {
       console.error("Network error deleting image:", error);
       setMessage(`Network error while deleting image: ${error.message}`);
-    } 
+    }
   };
-
   const handleEditTitle = async (imageId, newTitle) => {
-    
     try {
-      
       const response = await fetch(`http://localhost:5000/admin/gallery/${imageId}`, {
         method: "PUT",
         credentials: "include",
         headers: {
           'Content-Type': 'application/json',
-          // Add Authorization header if you have a token
-           },
-        body: JSON.stringify({ title: newTitle.trim() })
+        },
+        body: JSON.stringify({ title: newTitle })
       });
 
       console.log('Edit response status:', response.status); // Debug log
-
+      const data = await response.json();
       if (response.ok) {
-        const data = await response.json();
         console.log('Edit success response:', data);
         setMessage("Image title updated successfully!");
-        // Update local state immediately for better UX
-        setImages(prev => prev.map(img =>
-          img.id === imageId ? { ...img, title: newTitle.trim() } : img
-        ));
-        // Also refresh from server to ensure consistency
-        fetchImages();
         setEditingImage(null);
         setEditTitle('');
+        fetchImages();
       } else {
         const errorText = await response.text();
         console.error('Edit error response:', errorText);
         console.error('Edit response status:', response.status);
         console.error('Edit response statusText:', response.statusText);
-
-        let errorData;
-        try {
-          errorData = JSON.parse(errorText);
-        } catch {
-          errorData = { error: `Server error (${response.status}): ${response.statusText}` };
-        }
-
-        // Special handling for common HTTP status codes
-        if (response.status === 401) {
-          setMessage("Authentication failed. Please log in again.");
-        } else if (response.status === 403) {
-          setMessage("Access denied. Admin privileges required.");
-        } else if (response.status === 404) {
-          setMessage("Image not found. It may have been deleted.");
-          fetchImages(); // Refresh to remove from UI
-        } else {
-          setMessage(errorData.error || `Error updating image title (${response.status}): ${response.statusText}`);
-        }
+        setMessage(`❌ Edit failed: ${data.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error("Network error updating image title:", error);
       setMessage(`Network error while updating image title: ${error.message}`);
-    } finally {
-      // Clear loading state
-      setActionLoading(prev => {
-        const updated = { ...prev };
-        delete updated[`edit_${imageId}`];
-        return updated;
-      });
     }
   };
 
@@ -237,31 +198,12 @@ function Gallery() {
     setEditTitle('');
   };
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
   const isAdmin = user?.emprole?.toLowerCase() === 'admin';
 
   // Debug logging
   console.log('Gallery - user prop:', user);
   console.log('Gallery - user.emprole:', user?.emprole);
   console.log('Gallery - isAdmin:', isAdmin);
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-xl">Loading gallery...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -271,13 +213,6 @@ function Gallery() {
           <div>
             <h1 className="text-4xl font-bold text-gray-800 mb-2">School Gallery</h1>
             <p className="text-gray-600">Capturing memories and moments from our school community</p>
-
-            {/* Temporary Debug Info */}
-            {process.env.NODE_ENV === 'development' && (
-              <div className="mt-2 p-2 bg-yellow-100 rounded text-sm">
-                <strong>Debug:</strong> User: {user?.name || 'None'} | Role: {user?.emprole || 'None'} | IsAdmin: {isAdmin ? 'Yes' : 'No'}
-              </div>
-            )}
           </div>
 
           {isAdmin && (
@@ -327,92 +262,79 @@ function Gallery() {
                     src={`http://localhost:5000/gallery/image/${image.id}`}
                     alt={image.title}
                     className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                    onError={(e) => {
-                      e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjE5MiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzlmYTZiNyIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIG5vdCBmb3VuZDwvdGV4dD48L3N2Zz4=';
-                    }}
                   />
-
-                  {/* Admin Controls */}
-                  {isAdmin && (
-                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1">
-                      <button
-                        onClick={() => startEditing(image)}
-                        disabled={actionLoading[`edit_${image.id}`] || editingImage === image.id || editingImage !== null}
-                        className={`p-2 rounded-full transition-colors shadow-lg text-sm ${actionLoading[`edit_${image.id}`] || editingImage === image.id || editingImage !== null
-                          ? 'bg-gray-400 text-gray-600 cursor-not-allowed opacity-50'
-                          : 'bg-blue-500 text-white hover:bg-blue-600'
-                          }`}
-                        title={editingImage !== null ? "Finish editing current image first" : "Edit Title"}
-                      >
-                        {actionLoading[`edit_${image.id}`] ? '⏳' : '✏️'}
-                      </button>
-                      <button
-                        onClick={() => handleDelete(image.id)}
-                        disabled={actionLoading[`delete_${image.id}`] || editingImage !== null}
-                        className={`p-2 rounded-full transition-colors shadow-lg text-sm ${actionLoading[`delete_${image.id}`] || editingImage !== null
-                          ? 'bg-gray-400 text-gray-600 cursor-not-allowed opacity-50'
-                          : 'bg-red-500 text-white hover:bg-red-600'
-                          }`}
-                        title={editingImage !== null ? "Finish editing first" : "Delete Image"}
-                      >
-                        {actionLoading[`delete_${image.id}`] ? '⏳' : '🗑️'}
-                      </button>
+                  <div className="absolute top-2 right-2 flex space-x-2">
+                    <div className="bg-black bg-opacity-50 text-white px-2 py-1 rounded text-xs">
+                      ID: {image.id}
                     </div>
-                  )}
-
-                  {/* Image Overlay */}
-                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300"></div>
-                </div>
-
-                <div className="p-4">
-                  {editingImage === image.id ? (
-                    <div className="space-y-2">
-                      <input
-                        type="text"
-                        value={editTitle}
-                        onChange={(e) => setEditTitle(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 text-sm"
-                        placeholder="Enter image title"
-                        onKeyPress={(e) => {
-                          if (e.key === 'Enter') {
-                            handleEditTitle(image.id, editTitle);
-                          }
-                        }}
-                      />
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => handleEditTitle(image.id, editTitle)}
-                          disabled={actionLoading[`edit_${image.id}`]}
-                          className="flex-1 bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {actionLoading[`edit_${image.id}`] ? 'Saving...' : 'Save'}
-                        </button>
-                        <button
-                          onClick={cancelEditing}
-                          disabled={actionLoading[`edit_${image.id}`]}
-                          className="flex-1 bg-gray-500 text-white px-3 py-1 rounded text-sm hover:bg-gray-600 disabled:opacity-50"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <h3 className="font-semibold text-gray-800 mb-2 truncate" title={image.title}>
-                        {image.title}
-                      </h3>
-                      <div className="text-sm text-gray-600 space-y-1">
-                        <div className="flex items-center">
-                          <span className="mr-2">📅</span>
-                          <span>{formatDate(image.uploaded_at)}</span>
-                        </div>
-                        <div className="flex items-center">
-                          <span className="mr-2">👤</span>
-                          <span>{image.uploaded_by_name || 'Admin'}</span>
+                  </div>
+                  {/* IMAGE INFO */}
+                  <div className="p-4">
+                    {editingImage === image.id ? (
+                      <div className="space-y-3">
+                        <input
+                          type="text"
+                          value={editTitle}
+                          onChange={(e) => setEditTitle(e.target.value)}
+                          className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+                          placeholder="Enter new title"
+                        />
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleEditTitle(image.id, editTitle)}
+                            className="flex-1 bg-green-500 text-white py-2 rounded hover:bg-green-600"
+                          >
+                            💾 Save
+                          </button>
+                          <button
+                            onClick={cancelEditing}
+                            className="flex-1 bg-gray-500 text-white py-2 rounded hover:bg-gray-600"
+                          >
+                            ❌ Cancel
+                          </button>
                         </div>
                       </div>
-                    </>
-                  )}
+                    ) : (
+                      <div>
+                        <h3 className="font-bold text-lg mb-2">{image.title}</h3>
+                        <div className="text-sm text-gray-600 mb-4">
+                          <div>Size: {(image.file_size / 1024).toFixed(1)} KB</div>
+                          <div>By: {image.uploaded_by_name || 'Unknown'}</div>
+                        </div>
+
+                        {/* CONTROL BUTTONS - ALWAYS SHOW FOR DEBUGGING */}
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => {
+                              console.log('🔘 EDIT BUTTON CLICKED FOR IMAGE:', image.id);
+                              startEditing(image);
+                            }}
+                            className={`flex-1 py-2 rounded ${isAdmin
+                              ? 'bg-blue-500 text-white hover:bg-blue-600'
+                              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                              }`}
+                            disabled={!isAdmin}
+                          >
+                            ✏️ Edit {!isAdmin && '(Not Admin)'}
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              console.log('🔘 DELETE BUTTON CLICKED FOR IMAGE:', image.id);
+                              handleDelete(image.id);
+                            }}
+                            className={`flex-1 py-2 rounded ${isAdmin
+                              ? 'bg-red-500 text-white hover:bg-red-600'
+                              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                              }`}
+                            disabled={!isAdmin}
+                          >
+                            🗑️ Delete {!isAdmin && '(Not Admin)'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
