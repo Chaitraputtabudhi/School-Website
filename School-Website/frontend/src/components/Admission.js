@@ -1,4 +1,3 @@
-// pages/AdmissionsPage.js
 import React from 'react';
 
 const AdmissionsPage = () => {
@@ -8,7 +7,7 @@ const AdmissionsPage = () => {
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold mb-4">Admissions</h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Join the Brightwood Academy family! We welcome students who are eager to learn and grow.
+            Join the Placeholder Academy family! We welcome students who are eager to learn and grow.
           </p>
         </div>
         

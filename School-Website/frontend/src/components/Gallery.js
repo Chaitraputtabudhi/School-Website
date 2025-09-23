@@ -117,7 +117,7 @@ function Gallery() {
   };
 
   const handleDelete = async (imageId) => {
-    if (!window.confirm(`Are you sure you want to delete image ${imageId}?`)) {
+    if (!window.confirm(`Are you sure you want to delete image?`)) {
       console.log('🗑️ DELETE CANCELLED BY USER');
       return;
     }
@@ -127,9 +127,6 @@ function Gallery() {
         method: "DELETE",
         credentials: "include"
       });
-
-      console.log('Delete response status:', response.status); // Debug log
-      console.log('Delete response headers:', response.headers); // Debug headers
       const data = await response.json();
       if (response.ok) {
 
@@ -263,11 +260,6 @@ function Gallery() {
                     alt={image.title}
                     className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
                   />
-                  <div className="absolute top-2 right-2 flex space-x-2">
-                    <div className="bg-black bg-opacity-50 text-white px-2 py-1 rounded text-xs">
-                      ID: {image.id}
-                    </div>
-                  </div>
                   {/* IMAGE INFO */}
                   <div className="p-4">
                     {editingImage === image.id ? (
@@ -315,7 +307,7 @@ function Gallery() {
                               }`}
                             disabled={!isAdmin}
                           >
-                            ✏️ Edit {!isAdmin && '(Not Admin)'}
+                            ✏️ Edit {!isAdmin }
                           </button>
 
                           <button
@@ -329,7 +321,7 @@ function Gallery() {
                               }`}
                             disabled={!isAdmin}
                           >
-                            🗑️ Delete {!isAdmin && '(Not Admin)'}
+                            🗑️ Delete {!isAdmin}
                           </button>
                         </div>
                       </div>
