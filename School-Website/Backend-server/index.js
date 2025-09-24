@@ -242,6 +242,7 @@ app.put('/admin/events/:id', requireAdmin, async (req, res) => {
 
 //admin route with gallery
 const fs = require('fs');
+const { error } = require('console');
 const path = './public/Images';
 if (!fs.existsSync(path)) {
     fs.mkdirSync(path, { recursive: true });
@@ -317,6 +318,59 @@ app.post("/admin/gallery", requireAdmin, upload.array("images"), async (req, res
         client.release();
     }
 });
+
+//admin route with summer camp
+
+app.post('/admin/summercamp',requireAdmin,async(req,res) =>{
+    const { title, age,date,time,description,price} = req.body;
+    try {
+        const result = await pool.query('insert into summercamp(title,age,date,time,description,price,created_by) values ($1,$2,$3,$4,$5,$6) RETURNING *', [title, age,date,time,description,price,req.user.id]);
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({ error: "Server error" })
+    }
+
+})
+
+app.get('/summercamp', async(req,res) =>{
+    try{
+        const result = await pool.query('select * from summercamp');
+        res.json(result.rows);
+    }catch(err){
+        console.log("Server error",err);
+        res.status(500).json({error:"Server error"});
+    }
+    
+})
+
+app.put('/admin/summercamp/:id', requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    const { title, age, date,time, description,price } = req.body;
+    try {
+        const result = await pool.query('update summercamp set title = $1,age = $2, date = $3, time = $4, description = $5, created_by=$6, id=$7, price=$8 returning *',
+            [title, age, date,time, description, req.user.id, id,price]);
+        if (result.rows.length === 0) return res.status(404).json({ message: "SummerCamp not found." });
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({ error: "Server error" });
+    }
+});
+
+app.delete('/admin/summercamp/:id',requireAdmin,async(req,res) =>{
+    console.log('Delete route hit');
+    const { id } = req.params;
+    try {
+        const result = await pool.query('delete from summercamp where id=$1 returning *', [id]);
+        if (result.rows.length === 0) return res.status(404).json({ error: "SummerCamp not found." });
+        res.json({ message: "SummerCamp deleted successfully" })
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({ error: "Server error" });
+    }
+
+})
 
 app.get("/gallery", async (req, res) => {
     console.log("Gallery fetch route hit");

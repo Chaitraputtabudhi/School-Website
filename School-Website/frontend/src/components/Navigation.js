@@ -44,6 +44,7 @@ const Navigation = ({ isLoggedIn, user, handleLogout }) => {
         { id: 'manage-users', label: 'Manage Users', icon: UserPlus, path: '/admin/users' },
         { id: 'manage-content', label: 'Manage Gallery', icon: Edit3, path: '/admin/gallery' },
         { id: 'admin-settings', label: 'Settings', icon: Settings, path: '/admin/settings' },
+        { id: 'manage-summercamp', label: 'SummerCamp', icon: Sun, path: '/admin/summercamp'},
 
     ];
 
