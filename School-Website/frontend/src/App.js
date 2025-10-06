@@ -23,6 +23,7 @@ import Settings from './components/Settings';
 import Userboard from './components/Userboard';
 import SummerCamp from './components/SummerCamp';
 import ManageSummerCamp from './components/ManageSummerCamp';
+import ManageUsersPage from './components/ManageUsersPage';
 
 // Protected Route Component for Admin
 const AdminRoute = ({ user, children }) => {
@@ -79,8 +80,13 @@ function AnimatedRoutes({ handleLogin, handleRegister, user }) {
         <Route path="/admin/gallery" element={<AdminRoute user={user}><PageWrapper><Gallery user={user} adminView={true} /></PageWrapper></AdminRoute>} />
         <Route path="/admin/dashboard" element={<AdminRoute user={user}><PageWrapper><AdminDashboard /></PageWrapper></AdminRoute>} />
         <Route path="/admin/summercamp" element={<AdminRoute user={user}><PageWrapper><ManageSummerCamp user={user} adminView={true} /></PageWrapper></AdminRoute>} />
-        <Route path="/admin/users" element={<AdminRoute user={user}><PageWrapper><Userboard /></PageWrapper></AdminRoute>} />
         <Route path="/admin/settings" element={<AdminRoute user={user}><PageWrapper><Settings /></PageWrapper></AdminRoute>} />
+        <Route path="/admin" element={<AdminRoute user={user}><PageWrapper><AdminDashboard /></PageWrapper></AdminRoute>} /> 
+        <Route path="/admin/events" element={<AdminRoute user={user}><PageWrapper><ManageEventsPage /></PageWrapper></AdminRoute>} /> 
+        <Route path="/admin/gallery" element={<AdminRoute user={user}><PageWrapper><Gallery adminView={true} /></PageWrapper></AdminRoute>} /> 
+        <Route path="/admin/dashboard" element={<AdminRoute user={user}><PageWrapper><AdminDashboard /></PageWrapper></AdminRoute>} /> 
+        <Route path="/admin/users" element={<AdminRoute user={user}><PageWrapper><ManageUsersPage /></PageWrapper></AdminRoute>} />;
+
         <Route path="*" element={<Navigate to="/home" replace />} />
       </Routes>
     </AnimatePresence>

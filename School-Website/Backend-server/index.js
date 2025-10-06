@@ -373,8 +373,6 @@ app.delete('/admin/summercamp/:id',requireAdmin,async(req,res) =>{
 })
 
 app.get("/gallery", async (req, res) => {
-    console.log("Gallery fetch route hit");
-    
     try {
         const query = `
             SELECT g.id, g.filename, g.original_name, g.title, g.mime_type, 
@@ -483,6 +481,184 @@ app.put("/admin/gallery/:id", requireAdmin, async (req, res) => {
     } catch (err) {
         console.error("Error updating image:", err);
         res.status(500).json({ error: "Failed to update image: " + err.message });
+    }
+});
+
+
+
+//Users page
+
+// Get all users (Admin only)
+app.get('/admin/users', requireAdmin, async (req, res) => {
+    try {
+        const result = await pool.query(
+            'SELECT id, name, email, role, className, emprole FROM users ORDER BY id DESC'
+        );
+        res.json({ users: result.rows });
+    } catch (err) {
+        console.error('Error fetching users:', err);
+        res.status(500).json({ error: 'Failed to fetch users' });
+    }
+});
+
+// Get single user by ID (Admin only)
+app.get('/admin/users/:id', requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    try {
+        const result = await pool.query(
+            'SELECT id, name, email, role, className, emprole FROM users WHERE id=$1',
+            [id]
+        );
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        res.json({ user: result.rows[0] });
+    } catch (err) {
+        console.error('Error fetching user:', err);
+        res.status(500).json({ error: 'Failed to fetch user' });
+    }
+});
+
+// Update user (Admin only)
+app.put('/admin/users/:id', requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    const { name, email, role, className, emprole } = req.body;
+    
+    try {
+        // Check if user exists
+        const existingUser = await pool.query('SELECT * FROM users WHERE id=$1', [id]);
+        if (existingUser.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Check if email is being changed and if it's already in use
+        if (email !== existingUser.rows[0].email) {
+            const emailCheck = await pool.query('SELECT * FROM users WHERE email=$1 AND id!=$2', [email, id]);
+            if (emailCheck.rows.length > 0) {
+                return res.status(400).json({ error: 'Email already in use' });
+            }
+        }
+
+        // Update user
+        const result = await pool.query(
+            `UPDATE users 
+             SET name=$1, email=$2, role=$3, className=$4, emprole=$5 
+             WHERE id=$6 
+             RETURNING id, name, email, role, className, emprole`,
+            [name, email, role, className || null, emprole || null, id]
+        );
+
+        res.json({ 
+            message: 'User updated successfully', 
+            user: result.rows[0] 
+        });
+    } catch (err) {
+        console.error('Error updating user:', err);
+        if (err.code === '23505') {
+            res.status(400).json({ error: 'Email already exists' });
+        } else {
+            res.status(500).json({ error: 'Failed to update user' });
+        }
+    }
+});
+
+// Delete user (Admin only)
+app.delete('/admin/users/:id', requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    
+    try {
+        // Prevent admin from deleting themselves
+        if (parseInt(id) === req.user.id) {
+            return res.status(400).json({ error: 'Cannot delete your own account' });
+        }
+
+        // Check if user exists
+        const existingUser = await pool.query('SELECT * FROM users WHERE id=$1', [id]);
+        if (existingUser.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Delete user
+        await pool.query('DELETE FROM users WHERE id=$1', [id]);
+        
+        res.json({ message: 'User deleted successfully' });
+    } catch (err) {
+        console.error('Error deleting user:', err);
+        res.status(500).json({ error: 'Failed to delete user' });
+    }
+});
+
+// Get user statistics (Admin only)
+app.get('/admin/users/stats', requireAdmin, async (req, res) => {
+    try {
+        const totalUsers = await pool.query('SELECT COUNT(*) FROM users');
+        const students = await pool.query('SELECT COUNT(*) FROM users WHERE role=$1', ['student']);
+        const employees = await pool.query('SELECT COUNT(*) FROM users WHERE role=$1', ['employee']);
+        const admins = await pool.query('SELECT COUNT(*) FROM users WHERE emprole=$1', ['admin']);
+
+        res.json({
+            total: parseInt(totalUsers.rows[0].count),
+            students: parseInt(students.rows[0].count),
+            employees: parseInt(employees.rows[0].count),
+            admins: parseInt(admins.rows[0].count)
+        });
+    } catch (err) {
+        console.error('Error fetching user stats:', err);
+        res.status(500).json({ error: 'Failed to fetch statistics' });
+    }
+});
+
+// Bulk delete users (Admin only)
+app.post('/admin/users/bulk-delete', requireAdmin, async (req, res) => {
+    const { userIds } = req.body;
+    
+    if (!Array.isArray(userIds) || userIds.length === 0) {
+        return res.status(400).json({ error: 'Invalid user IDs' });
+    }
+
+    try {
+        // Prevent admin from deleting themselves
+        if (userIds.includes(req.user.id)) {
+            return res.status(400).json({ error: 'Cannot delete your own account' });
+        }
+
+        // Delete users
+        const result = await pool.query(
+            'DELETE FROM users WHERE id = ANY($1::int[]) RETURNING id',
+            [userIds]
+        );
+
+        res.json({ 
+            message: `${result.rows.length} user(s) deleted successfully`,
+            deletedCount: result.rows.length 
+        });
+    } catch (err) {
+        console.error('Error bulk deleting users:', err);
+        res.status(500).json({ error: 'Failed to delete users' });
+    }
+});
+
+// Change user password (Admin only)
+app.put('/admin/users/:id/password', requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    const { newPassword } = req.body;
+    
+    if (!newPassword || newPassword.length < 6) {
+        return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    }
+
+    try {
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        
+        await pool.query(
+            'UPDATE users SET password=$1 WHERE id=$2',
+            [hashedPassword, id]
+        );
+
+        res.json({ message: 'Password updated successfully' });
+    } catch (err) {
+        console.error('Error updating password:', err);
+        res.status(500).json({ error: 'Failed to update password' });
     }
 });
 

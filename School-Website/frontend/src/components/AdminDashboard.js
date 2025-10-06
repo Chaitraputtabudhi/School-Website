@@ -9,7 +9,6 @@ const AdminDashboard = () => {
         totalUsers: 0,
         upcomingEvents: 0
     });
-    const [loading, setLoading] = useState(true);
     const [user, setUser] = useState(null);
 
     useEffect(() => {
@@ -46,19 +45,26 @@ const AdminDashboard = () => {
             const gallery = await galleryRes.json();
             setStats(prev => ({ ...gallery, totalImages: gallery.length }));
 
+            //fetch total user
+            const userRes = await fetch('http://localhost:5000/admin/users', {
+                method:'GET',
+                credentials: 'include'
+            });
+            const userData = await userRes.json();
+            setStats(prev => ({ ...userData,totalUsers: userData.length}));
+            // console.log("User length",userData.users.length)
+
 
             setStats({
                 totalEvents: events.length,
                 totalImages: gallery.length,
-                totalUsers: 0,
+                totalUsers: userData.users?.length || 0,
                 upcomingEvents: upcoming
             });
 
         } catch (error) {
             console.error('Error fetching dashboard stats:', error);
-        } finally {
-            setLoading(false);
-        }
+        } 
     };
 
     const dashboardCards = [
@@ -131,19 +137,7 @@ const AdminDashboard = () => {
         }
     ];
 
-    if (loading) {
-        return (
-            <div>
-
-                <div className="min-h-screen flex items-center justify-center bg-gray-50">
-                    <div className="text-center">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-                        <p className="mt-4 text-gray-600">Loading dashboard...</p>
-                    </div>
-                </div>
-            </div>
-        );
-    }
+    
 
     return (
         <div className="min-h-screen bg-gray-50">
