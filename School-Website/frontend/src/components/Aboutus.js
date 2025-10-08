@@ -6,9 +6,9 @@ const Aboutus = () => {
     <div className="min-h-screen py-12 bg-gray-50">
       <div className="max-w-6xl mx-auto px-4">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-4">About Treetop Academy</h1>
+          <h1 className="text-4xl font-bold mb-4">About Placeholder Academy</h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Established in 1985, Treetop Academy has been a beacon of educational excellence, 
+            Established in 1985, Placeholder Academy has been a beacon of educational excellence, 
             nurturing young minds and building tomorrow's leaders.
           </p>
         </div>

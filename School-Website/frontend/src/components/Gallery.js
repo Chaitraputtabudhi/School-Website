@@ -1,20 +1,24 @@
 import React, { useState, useEffect } from "react";
 
-
 function Gallery() {
   const [images, setImages] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState('');
   const [previewImages, setPreviewImages] = useState([]);
+  const [editingImage, setEditingImage] = useState(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     const savedUser = localStorage.getItem("user");
     if (savedUser) {
-      setUser(JSON.parse(savedUser));
+      const parsedUser = JSON.parse(savedUser);
+      setUser(parsedUser);
+      console.log('🔍 CURRENT USER:', parsedUser);
+      console.log('🔍 USER EMPROLE:', parsedUser?.emprole);
+      console.log('🔍 IS ADMIN?:', parsedUser?.emprole?.toLowerCase() === 'admin');
     }
     fetchImages();
   }, []);
@@ -22,17 +26,20 @@ function Gallery() {
   const fetchImages = async () => {
     try {
       const response = await fetch("http://localhost:5000/gallery", {
-        credentials: "include"
+        credentials: "include",
+        headers: {
+          'Content-Type': 'application/json',
+        }
       });
+
       if (response.ok) {
         const data = await response.json();
+        console.log('Fetched images:', data); // Debug log
         setImages(data);
       }
     } catch (error) {
       console.error("Error fetching images:", error);
-      setMessage("Error loading gallery images");
-    } finally {
-      setLoading(false);
+      setMessage("Error loading gallery images - please check your connection");
     }
   };
 
@@ -76,7 +83,7 @@ function Gallery() {
 
     setUploading(true);
     const formData = new FormData();
-    
+
     selectedFiles.forEach(file => {
       formData.append('images', file);
     });
@@ -86,14 +93,15 @@ function Gallery() {
     });
 
     try {
-      const response = await fetch("http://localhost:5000/gallery", {
+      const response = await fetch("http://localhost:5000/admin/gallery", {
         method: "POST",
         credentials: "include",
         body: formData
       });
 
       if (response.ok) {
-        setMessage(`Successfully uploaded ${selectedFiles.length} image(s)!`);
+        const data = await response.json();
+        setMessage(`Successfully uploaded ${data.files.length} image(s)!`);
         fetchImages();
         handleCloseModal();
       } else {
@@ -108,25 +116,60 @@ function Gallery() {
     }
   };
 
-  const handleDelete = async (imageId, imagePath) => {
-    if (!window.confirm("Are you sure you want to delete this image?")) return;
+  const handleDelete = async (imageId) => {
+    if (!window.confirm(`Are you sure you want to delete image?`)) {
+      console.log('🗑️ DELETE CANCELLED BY USER');
+      return;
+    }
 
     try {
-      const response = await fetch(`http://localhost:5000/gallery/${imageId}`, {
+      const response = await fetch(`http://localhost:5000/admin/gallery/${imageId}`, {
         method: "DELETE",
         credentials: "include"
       });
-
+      const data = await response.json();
       if (response.ok) {
+
+        console.log('Delete success response:', data);
         setMessage("Image deleted successfully!");
         fetchImages();
       } else {
-        const data = await response.json();
-        setMessage(data.error || "Error deleting image");
+        setMessage(`❌ Delete failed: ${data.error || 'Unknown error'}`);
       }
     } catch (error) {
-      console.error("Error deleting image:", error);
-      setMessage("Error deleting image");
+      console.error("Network error deleting image:", error);
+      setMessage(`Network error while deleting image: ${error.message}`);
+    }
+  };
+  const handleEditTitle = async (imageId, newTitle) => {
+    try {
+      const response = await fetch(`http://localhost:5000/admin/gallery/${imageId}`, {
+        method: "PUT",
+        credentials: "include",
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ title: newTitle })
+      });
+
+      console.log('Edit response status:', response.status); // Debug log
+      const data = await response.json();
+      if (response.ok) {
+        console.log('Edit success response:', data);
+        setMessage("Image title updated successfully!");
+        setEditingImage(null);
+        setEditTitle('');
+        fetchImages();
+      } else {
+        const errorText = await response.text();
+        console.error('Edit error response:', errorText);
+        console.error('Edit response status:', response.status);
+        console.error('Edit response statusText:', response.statusText);
+        setMessage(`❌ Edit failed: ${data.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error("Network error updating image title:", error);
+      setMessage(`Network error while updating image title: ${error.message}`);
     }
   };
 
@@ -142,31 +185,25 @@ function Gallery() {
     setPreviewImages(updatedPreviews);
   };
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+  const startEditing = (image) => {
+    setEditingImage(image.id);
+    setEditTitle(image.title);
   };
 
-  const isAdmin = user?.role === 'admin';
+  const cancelEditing = () => {
+    setEditingImage(null);
+    setEditTitle('');
+  };
 
-  if (loading) {
-    return (
-      <div>
-        {/* <Navigation /> */}
-        <div className="flex justify-center items-center min-h-screen">
-          <div className="text-xl">Loading gallery...</div>
-        </div>
-      </div>
-    );
-  }
+  const isAdmin = user?.emprole?.toLowerCase() === 'admin';
+
+  // Debug logging
+  console.log('Gallery - user prop:', user);
+  console.log('Gallery - user.emprole:', user?.emprole);
+  console.log('Gallery - isAdmin:', isAdmin);
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* <Navigation /> */}
-      
       <div className="container mx-auto px-4 py-8">
         {/* Header Section */}
         <div className="flex justify-between items-center mb-8">
@@ -174,28 +211,28 @@ function Gallery() {
             <h1 className="text-4xl font-bold text-gray-800 mb-2">School Gallery</h1>
             <p className="text-gray-600">Capturing memories and moments from our school community</p>
           </div>
-          
+
           {isAdmin && (
             <button
               onClick={() => setShowUploadModal(true)}
-              className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors font-semibold shadow-lg"
+              className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors font-semibold shadow-lg flex items-center space-x-2"
             >
-              📸 Upload Images
+              <span>📸</span>
+              <span>Upload Images</span>
             </button>
           )}
         </div>
 
         {/* Message Display */}
         {message && (
-          <div className={`p-4 rounded-lg mb-6 ${
-            message.includes('success') || message.includes('Successfully')
-              ? 'bg-green-100 border border-green-400 text-green-700'
-              : 'bg-red-100 border border-red-400 text-red-700'
-          }`}>
+          <div className={`p-4 rounded-lg mb-6 ${message.includes('success') || message.includes('Successfully')
+            ? 'bg-green-100 border border-green-400 text-green-700'
+            : 'bg-red-100 border border-red-400 text-red-700'
+            }`}>
             {message}
-            <button 
+            <button
               onClick={() => setMessage('')}
-              className="float-right text-lg font-bold"
+              className="float-right text-lg font-bold hover:opacity-70"
             >
               ×
             </button>
@@ -203,9 +240,9 @@ function Gallery() {
         )}
 
         {/* Stats */}
-        <div className="bg-white p-4 rounded-lg shadow-md mb-8">
+        <div className="bg-white p-6 rounded-lg shadow-md mb-8">
           <div className="text-center">
-            <span className="text-2xl font-bold text-gray-800">{images.length}</span>
+            <span className="text-3xl font-bold text-gray-800">{images.length}</span>
             <span className="text-gray-600 ml-2">
               {images.length === 1 ? 'Image' : 'Images'} in Gallery
             </span>
@@ -219,44 +256,76 @@ function Gallery() {
               <div key={image.id} className="bg-white rounded-lg shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden group">
                 <div className="relative">
                   <img
-                    src={`http://localhost:5000/${image.file_path}`}
+                    src={`http://localhost:5000/gallery/image/${image.id}`}
                     alt={image.title}
                     className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                    onError={(e) => {
-                      e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjE5MiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzlmYTZiNyIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIG5vdCBmb3VuZDwvdGV4dD48L3N2Zz4=';
-                    }}
                   />
-                  
-                  {/* Admin Controls */}
-                  {isAdmin && (
-                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        onClick={() => handleDelete(image.id, image.file_path)}
-                        className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors shadow-lg"
-                        title="Delete Image"
-                      >
-                        🗑️
-                      </button>
-                    </div>
-                  )}
+                  {/* IMAGE INFO */}
+                  <div className="p-4">
+                    {editingImage === image.id ? (
+                      <div className="space-y-3">
+                        <input
+                          type="text"
+                          value={editTitle}
+                          onChange={(e) => setEditTitle(e.target.value)}
+                          className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+                          placeholder="Enter new title"
+                        />
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleEditTitle(image.id, editTitle)}
+                            className="flex-1 bg-green-500 text-white py-2 rounded hover:bg-green-600"
+                          >
+                            💾 Save
+                          </button>
+                          <button
+                            onClick={cancelEditing}
+                            className="flex-1 bg-gray-500 text-white py-2 rounded hover:bg-gray-600"
+                          >
+                            ❌ Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div>
+                        <h3 className="font-bold text-lg mb-2">{image.title}</h3>
+                        <div className="text-sm text-gray-600 mb-4">
+                          <div>Size: {(image.file_size / 1024).toFixed(1)} KB</div>
+                          <div>By: {image.uploaded_by_name || 'Unknown'}</div>
+                        </div>
 
-                  {/* Image Overlay */}
-                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300"></div>
-                </div>
-                
-                <div className="p-4">
-                  <h3 className="font-semibold text-gray-800 mb-2 truncate" title={image.title}>
-                    {image.title}
-                  </h3>
-                  <div className="text-sm text-gray-600">
-                    <div className="flex items-center mb-1">
-                      <span className="mr-2">📅</span>
-                      <span>{formatDate(image.uploaded_at)}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <span className="mr-2">👤</span>
-                      <span>{image.uploaded_by_name || 'Admin'}</span>
-                    </div>
+                        {/* CONTROL BUTTONS - ALWAYS SHOW FOR DEBUGGING */}
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => {
+                              console.log('🔘 EDIT BUTTON CLICKED FOR IMAGE:', image.id);
+                              startEditing(image);
+                            }}
+                            className={`flex-1 py-2 rounded ${isAdmin
+                              ? 'bg-blue-500 text-white hover:bg-blue-600'
+                              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                              }`}
+                            disabled={!isAdmin}
+                          >
+                            ✏️ Edit {!isAdmin }
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              console.log('🔘 DELETE BUTTON CLICKED FOR IMAGE:', image.id);
+                              handleDelete(image.id);
+                            }}
+                            className={`flex-1 py-2 rounded ${isAdmin
+                              ? 'bg-red-500 text-white hover:bg-red-600'
+                              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                              }`}
+                            disabled={!isAdmin}
+                          >
+                            🗑️ Delete {!isAdmin}
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -309,7 +378,7 @@ function Gallery() {
                   disabled={uploading}
                 />
                 <p className="text-sm text-gray-500 mt-1">
-                  Supports: JPG, PNG, GIF. You can select multiple images at once.
+                  Supports: JPG, PNG, GIF, WebP. You can select multiple images at once.
                 </p>
               </div>
 
@@ -343,11 +412,10 @@ function Gallery() {
                 <button
                   onClick={handleUpload}
                   disabled={uploading || selectedFiles.length === 0}
-                  className={`flex-1 py-3 rounded-lg font-semibold transition-colors ${
-                    uploading || selectedFiles.length === 0
-                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                      : 'bg-green-600 text-white hover:bg-green-700'
-                  }`}
+                  className={`flex-1 py-3 rounded-lg font-semibold transition-colors ${uploading || selectedFiles.length === 0
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-green-600 text-white hover:bg-green-700'
+                    }`}
                 >
                   {uploading ? (
                     <span className="flex items-center justify-center">
@@ -355,7 +423,7 @@ function Gallery() {
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
-                      Uploading...
+                      Uploading to Database...
                     </span>
                   ) : (
                     `Upload ${selectedFiles.length} Image${selectedFiles.length !== 1 ? 's' : ''}`

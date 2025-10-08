@@ -6,21 +6,19 @@ const Home = ({ setCurrentPage }) => {
   const navigate = useNavigate();
   return (
     <div className="min-h-screen">
-      {/* Hero Section */}
-      {/* <div className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 text-white"> */}
       <div className="relative bg-cover bg-center text-white" style={{ backgroundImage: "url('/Images/School-Image.jpg')" }}>
         <div className="absolute inset-0 bg-black opacity-20"></div>
         <div className="relative max-w-7xl mx-auto px-4 py-24">
           <div className="text-center">
             <h1 className="text-5xl md:text-6xl font-bold mb-6">
-              Welcome to <span className="text-yellow-300">Treetop Academy</span>
+              Welcome to <span className="text-yellow-300">Placeholder Academy</span>
             </h1>
             <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto opacity-90">
               Nurturing minds, building futures, and inspiring excellence in every student
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button
-                onClick={() => navigate('/admissions')}
+                onClick={() => navigate('/admission')}
                 className="bg-yellow-500 text-blue-900 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-yellow-400 transition-colors transform hover:scale-105"
               >
                 Apply Now
@@ -39,7 +37,7 @@ const Home = ({ setCurrentPage }) => {
       {/* Features Section */}
       <div className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">Why Choose Treetop Academy?</h2>
+          <h2 className="text-3xl font-bold text-center mb-12">Why Choose Placeholder Academy?</h2>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="bg-white p-6 rounded-xl shadow-lg text-center hover:shadow-xl transition-shadow">
               <Award className="w-12 h-12 text-blue-600 mx-auto mb-4" />

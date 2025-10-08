@@ -32,7 +32,7 @@ const ContactPage = () => {
                   <h3 className="font-semibold">Address</h3>
                   <p className="text-gray-600">
                     123 Education Drive<br />
-                    Brightwood City, BC 12345<br />
+                    Placeholder City, BC 12345<br />
                     United States
                   </p>
                 </div>
@@ -54,8 +54,8 @@ const ContactPage = () => {
                 <div>
                   <h3 className="font-semibold">Email</h3>
                   <p className="text-gray-600">
-                    info@brightwood-academy.edu<br />
-                    admissions@brightwood-academy.edu
+                    info@Placeholder-academy.edu<br />
+                    admissions@Placeholder-academy.edu
                   </p>
                 </div>
               </div>

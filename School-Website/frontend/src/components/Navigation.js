@@ -10,7 +10,7 @@ const Navigation = ({ isLoggedIn, user, handleLogout }) => {
     const adminDropdownRef = useRef(null);
     const navigate = useNavigate();
 
-    const isAdmin = user?.role === 'admin';
+    const isAdmin = user?.emprole?.toLowerCase() === 'admin';
 
     //drop down close when clicked outside
     useEffect(() => {
@@ -42,8 +42,9 @@ const Navigation = ({ isLoggedIn, user, handleLogout }) => {
         { id: 'admin-dashboard', label: 'Dashboard', icon: BarChart3, path: '/admin/dashboard' },
         { id: 'manage-events', label: 'Manage Events', icon: Calendar, path: '/admin/events' },
         { id: 'manage-users', label: 'Manage Users', icon: UserPlus, path: '/admin/users' },
-        { id: 'manage-content', label: 'Manage Content', icon: Edit3, path: '/admin/content' },
+        { id: 'manage-content', label: 'Manage Gallery', icon: Edit3, path: '/admin/gallery' },
         { id: 'admin-settings', label: 'Settings', icon: Settings, path: '/admin/settings' },
+        { id: 'manage-summercamp', label: 'SummerCamp', icon: Sun, path: '/admin/summercamp'},
 
     ];
 
@@ -59,12 +60,6 @@ const Navigation = ({ isLoggedIn, user, handleLogout }) => {
 
     const visibleItems = getVisibleItems();
 
-    const handleEventsDropdown = (e) => {
-        e.preventDefault();
-        setIsAdminDropdownOpen(!isAdminDropdownOpen);
-        setIsEventsDropdownOpen(false);
-    };
-
     const handleAdminDropdown = (e) => {
         e.preventDefault();
         setIsAdminDropdownOpen(!isAdminDropdownOpen);
@@ -72,8 +67,8 @@ const Navigation = ({ isLoggedIn, user, handleLogout }) => {
     };
 
     const closeAllDropdowns = (e) => {
-        e.preventDefault();
-        setIsAdminDropdownOpen(!isAdminDropdownOpen);
+        // e.preventDefault();
+        setIsAdminDropdownOpen(false);
         setIsEventsDropdownOpen(false);
     };
 
@@ -86,70 +81,12 @@ const Navigation = ({ isLoggedIn, user, handleLogout }) => {
                         <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
                             <GraduationCap className="w-6 h-6 text-white" />
                         </div>
-                        <span className="text-xl font-bold text-gray-800">Treetop Academy</span>
+                        <span className="text-xl font-bold text-gray-800">Placeholder Academy</span>
                     </div>
 
                     {/* Desktop Menu */}
                     <div className="hidden md:flex items-center space-x-8">
                         {visibleItems.map(item => {
-
-                            // Admin dropdown for Events
-                            if (item.id === 'events' && item.dropdown) {
-                                return (
-                                    <div key={item.id} className="relative" ref={eventsDropdownRef}>
-                                        <button
-                                            onClick={handleEventsDropdown}
-                                            className="flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-blue-700"
-                                        >
-                                            <item.icon className="w-4 h-4" />
-                                            <span>{item.label}</span>
-                                            <svg className={`w-4 h-4 transition-transform ${isEventsDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                            </svg>
-                                        </button>
-                                        {isEventsDropdownOpen && (
-                                            <div className="absolute top-full mt-2 w-48 bg-white shadow-lg rounded-md border border-gray-200 py-1">
-                                                <NavLink
-                                                    to="/events"
-                                                    className="flex items-center px-4 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition-colors"
-                                                    onClick={closeAllDropdowns}
-                                                >
-                                                    <Calendar className="w-4 h-4 mr-2" />
-                                                    View Events
-                                                </NavLink>
-                                                {isAdmin && (
-                                                    <>
-                                                        <hr className="my-1" />
-                                                        <NavLink
-                                                            to="/admin/events"
-                                                            className="flex items-center px-4 py-2 text-sm text-amber-600 hover:bg-amber-50 hover:text-amber-700 transition-colors"
-                                                            onClick={closeAllDropdowns}
-                                                        >
-                                                            <Settings className="w-4 h-4 mr-2" />
-                                                            Manage Events
-                                                        </NavLink>
-                                                    </>
-                                                )}
-
-                                                {user && (
-                                                    <NavLink
-                                                        to="/user/events"
-                                                        className="flex items-center px-4 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition-colors"
-                                                        onClick={closeAllDropdowns}
-                                                    >
-                                                        <Users className="w-4 h-4 mr-2" />
-                                                        My Events
-                                                    </NavLink>
-                                                )}
-
-
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            }
-
-                            // Regular navigation items
                             return (
                                 <NavLink
                                     key={item.id}
@@ -202,14 +139,6 @@ const Navigation = ({ isLoggedIn, user, handleLogout }) => {
                         {/* User Authentication Section */}
                         {isLoggedIn ? (
                             <div className="flex items-center space-x-4 ml-4 border-l border-gray-200 pl-4">
-                                <div className="flex items-center space-x-2">
-                                    <div className="hidden lg:block">
-                                        <span className="text-sm text-gray-600">Hello, {user?.name}</span>
-                                        {isAdmin && (
-                                            <span className="block text-xs text-amber-600 font-medium">Admin</span>
-                                        )}
-                                    </div>
-                                </div>
                                 <button
                                     onClick={handleLogout}
                                     className="bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-red-700 transition-colors"
